@@ -5,13 +5,14 @@ from flask import Flask, render_template_string, request, jsonify, session, redi
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'hbbas_quran_2025'
+app.secret_key = os.environ.get('SECRET_KEY', 'hbbas_quran_2025')
 
 # ============================================
 # ملفات التخزين
 # ============================================
-USERS_FILE = 'users.json'
-EXAMS_FILE = 'exams.json'
+DATA_DIR = '/data' if os.path.exists('/data') else '.'
+USERS_FILE = os.path.join(DATA_DIR, 'users.json')
+EXAMS_FILE = os.path.join(DATA_DIR, 'exams.json')
 
 def load_users():
     if os.path.exists(USERS_FILE):
@@ -36,7 +37,7 @@ def save_exams(exams):
 USERS = load_users()
 
 # ============================================
-# بيانات السور والأجزاء (حسب التقسيم الصحيح)
+# بيانات الأجزاء حسب التقسيم الصحيح
 # ============================================
 
 # الجزء 30: من النبأ إلى الناس (37 سورة كاملة)
@@ -180,9 +181,11 @@ PART_6 = [
     ("النساء", 1, 176), ("المائدة", 1, 120)
 ]
 
-# الجزء 4 و 5: تابع سورة النساء
-PART_4 = [("النساء", 1, 176)]
+# الجزء 5: تابع سورة النساء
 PART_5 = [("النساء", 1, 176)]
+
+# الجزء 4: تابع سورة النساء
+PART_4 = [("النساء", 1, 176)]
 
 # الجزء 3: آل عمران (باقي) إلى البقرة (باقي)
 PART_3 = [
@@ -197,41 +200,16 @@ PART_1 = [
     ("الفاتحة", 1, 7), ("البقرة", 1, 141)
 ]
 
-# تجميع كل الأجزاء في قاموس واحد
+# تجميع كل الأجزاء
 PARTS_DATA = {
-    1: PART_1,
-    2: PART_2,
-    3: PART_3,
-    4: PART_4,
-    5: PART_5,
-    6: PART_6,
-    7: PART_7,
-    8: PART_8,
-    9: PART_9,
-    10: PART_10,
-    11: PART_11,
-    12: PART_12,
-    13: PART_13,
-    14: PART_14,
-    15: PART_15,
-    16: PART_16,
-    17: PART_17,
-    18: PART_18,
-    19: PART_19,
-    20: PART_20,
-    21: PART_21,
-    22: PART_22,
-    23: PART_23,
-    24: PART_24,
-    25: PART_25,
-    26: PART_26,
-    27: PART_27,
-    28: PART_28,
-    29: PART_29,
-    30: PART_30
+    1: PART_1, 2: PART_2, 3: PART_3, 4: PART_4, 5: PART_5, 6: PART_6, 7: PART_7,
+    8: PART_8, 9: PART_9, 10: PART_10, 11: PART_11, 12: PART_12, 13: PART_13, 14: PART_14,
+    15: PART_15, 16: PART_16, 17: PART_17, 18: PART_18, 19: PART_19, 20: PART_20, 21: PART_21,
+    22: PART_22, 23: PART_23, 24: PART_24, 25: PART_25, 26: PART_26, 27: PART_27, 28: PART_28,
+    29: PART_29, 30: PART_30
 }
 
-# صفحات تقريبية لكل سورة
+# خريطة الصفحات لكل سورة
 PAGE_MAP = {
     "الفاتحة": 1, "البقرة": 2, "آل عمران": 50, "النساء": 80, "المائدة": 110,
     "الأنعام": 130, "الأعراف": 150, "الأنفال": 180, "التوبة": 190, "يونس": 210,
@@ -263,7 +241,6 @@ def get_page_for_verse(surah_name, verse_num):
     return base_page + ((verse_num - 1) // 15)
 
 def generate_all_verses_for_part(part_number):
-    """توليد كل آيات الجزء"""
     if part_number not in PARTS_DATA:
         return []
     verses = []
@@ -293,7 +270,7 @@ def generate_full_questions(num_questions=30):
     return random.sample(all_verses, num_questions)
 
 # ============================================
-# باقي الكود (نفسه مع إزالة الإموجيات)
+# صفحات HTML (منفصلة وواضحة)
 # ============================================
 
 LOGIN_PAGE = '''
@@ -301,6 +278,7 @@ LOGIN_PAGE = '''
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نور البيان - تسجيل الدخول</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','Amiri',sans-serif}
@@ -329,7 +307,9 @@ LOGIN_PAGE = '''
         <button type="submit">دخول</button>
     </form>
     <div class="register-link">ليس لديك حساب <a href="{{ url_for('register') }}">إنشاء حساب جديد</a></div>
-    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
 </div>
 </body>
 </html>
@@ -340,6 +320,7 @@ REGISTER_PAGE = '''
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نور البيان - إنشاء حساب</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','Amiri',sans-serif}
@@ -365,7 +346,9 @@ REGISTER_PAGE = '''
         <button type="submit">إنشاء حساب</button>
     </form>
     <div class="login-link">لديك حساب بالفعل <a href="{{ url_for('login') }}">تسجيل الدخول</a></div>
-    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
 </div>
 </body>
 </html>
@@ -376,12 +359,15 @@ MAIN_APP_PAGE = '''
 <html dir="rtl" lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>نور البيان - لوحة التحكم</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','Amiri',sans-serif}
         body{background:linear-gradient(135deg,#0a3b2a,#146b4e);min-height:100vh;padding:20px}
-        .container{max-width:1400px;margin:0 auto}
+        .container{max-width:var(--max-width,1400px);margin:0 auto;transition:all 0.3s}
+        .view-buttons{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
+        .view-btn{background:#e8e0c8;padding:10px 25px;border-radius:60px;cursor:pointer;font-weight:bold;border:none}
+        .view-btn.active{background:#2b6e3c;color:#fff}
         .header{background:#fffef7;border-radius:48px;padding:20px 30px;margin-bottom:25px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
         h1{color:#2b6e3c;font-size:1.8rem}
         .logo{color:#c97e2a;font-size:0.9rem}
@@ -421,61 +407,121 @@ MAIN_APP_PAGE = '''
         .exam-title{font-size:1.2rem;font-weight:bold;color:#2b6e3c;margin-bottom:10px}
         .exam-info{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:15px;font-size:0.9rem;color:#666}
         .exam-actions{display:flex;gap:10px;flex-wrap:wrap}
-        .pending-students{background:#e8f0e8;border-radius:30px;padding:15px;margin:15px 0}
         .student-select-item{padding:10px 20px;margin:5px;background:#fff;border-radius:30px;cursor:pointer;display:inline-block;border:1px solid #ddd}
         .student-select-item:hover{background:#2b6e3c;color:#fff}
+        @media (max-width:768px){.container{--max-width:100%}.header h1{font-size:1.2rem}.tab{padding:8px 12px;font-size:0.8rem}.card{padding:15px}}
     </style>
 </head>
 <body>
-<div class="container">
+<div class="container" id="mainContainer">
+    <div class="view-buttons">
+        <button class="view-btn" id="desktopView">تشغيل على الحاسب (شاشة عريضة)</button>
+        <button class="view-btn" id="mobileView">تشغيل على الهاتف (شاشة نحيفة)</button>
+    </div>
     <div class="header">
         <div><h1>نور البيان</h1><div class="logo">جمعية تحفيظ القرآن الكريم - الروضة هباس</div></div>
         <div class="user-info"><span>مرحبا {{ username }}</span><a href="/logout" class="logout-btn">تسجيل خروج</a></div>
     </div>
-    
     <div class="tabs">
         <div class="tab active" data-tab="exams">الاختبارات الحالية</div>
         <div class="tab" data-tab="create">إنشاء اختبار جديد</div>
         <div class="tab" data-tab="results">نتائج سابقة</div>
     </div>
     
-    <div id="tab-exams" class="tab-content active"><div class="card"><h2>الاختبارات المتاحة</h2><div id="exams-list"></div></div></div>
+    <div id="tab-exams" class="tab-content active">
+        <div class="card">
+            <h2>الاختبارات المتاحة</h2>
+            <div id="exams-list"></div>
+        </div>
+    </div>
     
     <div id="tab-create" class="tab-content">
         <div class="card">
             <h2>إنشاء اختبار جديد</h2>
-            <div class="flex-row"><div style="flex:1"><label>اسم الاختبار</label><input type="text" id="exam-name" placeholder="مثال: اختبار رمضان 1446"></div></div>
+            <div class="flex-row">
+                <div style="flex:1"><label>اسم الاختبار</label><input type="text" id="exam-name" placeholder="مثال: اختبار رمضان 1446"></div>
+            </div>
             <div class="flex-row">
                 <div style="flex:1"><label>نوع الاختبار</label><select id="exam-type"><option value="part">جزء محدد</option><option value="full">القرآن كامل</option></select></div>
                 <div style="flex:1" id="part-select-container"><label>اختر الجزء</label><select id="part-select"><option value="">-- اختر الجزء --</option>{% for i in range(1, 31) %}<option value="{{ i }}">الجزء {{ i }}</option>{% endfor %}</select></div>
             </div>
-            <div class="flex-row"><div style="flex:1"><label>عدد الأسئلة</label><input type="number" id="num-questions" value="10" min="1" max="50"></div><div style="flex:1"><label>كم ينقص الخطأ الواحد (نسبة مئوية)</label><input type="number" id="error-deduction" value="2" step="0.5" min="0" max="100"></div></div>
-            <div><label>المعايير الإضافية (تلاوة، تجويد، ترتيل، إلخ)</label><div id="criteria-container"></div><button type="button" class="btn-outline btn-sm" id="add-criteria-btn" style="margin-top:10px">+ إضافة معيار جديد</button></div>
-            <div><label>الطلاب المتسابقون</label><div id="students-container" class="students-list"></div><div class="flex-row"><input type="text" id="new-student-name" placeholder="اسم الطالب الجديد" style="flex:2"><button id="add-student-btn" class="btn-secondary btn-sm">+ إضافة طالب</button></div></div>
-            <div class="flex-row" style="justify-content:space-between"><button id="create-exam-btn" class="btn-primary">إنشاء الاختبار</button></div>
+            <div class="flex-row">
+                <div style="flex:1"><label>عدد الأسئلة</label><input type="number" id="num-questions" value="10" min="1" max="50"></div>
+                <div style="flex:1"><label>كم ينقص الخطأ الواحد (نسبة مئوية)</label><input type="number" id="error-deduction" value="2" step="0.5" min="0" max="100"></div>
+            </div>
+            <div>
+                <label>المعايير الإضافية (تلاوة، تجويد، ترتيل، إلخ)</label>
+                <div id="criteria-container"></div>
+                <button type="button" class="btn-outline btn-sm" id="add-criteria-btn" style="margin-top:10px">+ إضافة معيار جديد</button>
+            </div>
+            <div>
+                <label>الطلاب المتسابقون</label>
+                <div id="students-container" class="students-list"></div>
+                <div class="flex-row">
+                    <input type="text" id="new-student-name" placeholder="اسم الطالب الجديد" style="flex:2">
+                    <button id="add-student-btn" class="btn-secondary btn-sm">+ إضافة طالب</button>
+                </div>
+            </div>
+            <div class="flex-row" style="justify-content:space-between">
+                <button id="create-exam-btn" class="btn-primary">إنشاء الاختبار</button>
+            </div>
         </div>
     </div>
     
-    <div id="tab-results" class="tab-content"><div class="card"><h2>نتائج الاختبارات السابقة</h2><div id="old-exams-list"></div></div></div>
+    <div id="tab-results" class="tab-content">
+        <div class="card">
+            <h2>نتائج الاختبارات السابقة</h2>
+            <div id="old-exams-list"></div>
+        </div>
+    </div>
     
+    <!-- نافذة تعديل الاختبار -->
     <div id="edit-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center">
-        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto"><h2>تعديل الاختبار</h2><div id="edit-content"></div><div class="flex-row" style="justify-content:space-between; margin-top:20px"><button id="close-edit-btn" class="btn-secondary">إلغاء</button><button id="save-edit-btn" class="btn-primary">حفظ التعديلات</button></div></div>
+        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto">
+            <h2>تعديل الاختبار</h2>
+            <div id="edit-content"></div>
+            <div class="flex-row" style="justify-content:space-between; margin-top:20px">
+                <button id="close-edit-btn" class="btn-secondary">إلغاء</button>
+                <button id="save-edit-btn" class="btn-primary">حفظ التعديلات</button>
+            </div>
+        </div>
     </div>
     
+    <!-- نافذة اختيار الطالب -->
     <div id="student-select-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center">
-        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:500px; width:90%"><div id="student-select-content"></div></div>
+        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:500px; width:90%">
+            <div id="student-select-content"></div>
+        </div>
     </div>
     
+    <!-- نافذة الاختبار -->
     <div id="quiz-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center">
-        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:700px; width:90%; max-height:85vh; overflow-y:auto"><div id="quiz-content"></div></div>
+        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:700px; width:90%; max-height:85vh; overflow-y:auto">
+            <div id="quiz-content"></div>
+        </div>
     </div>
     
+    <!-- نافذة النتائج -->
     <div id="results-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center">
-        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:800px; width:90%; max-height:85vh; overflow-y:auto"><div id="results-content"></div></div>
+        <div style="background:#fffef7; border-radius:48px; padding:30px; max-width:800px; width:90%; max-height:85vh; overflow-y:auto">
+            <div id="results-content"></div>
+        </div>
     </div>
 </div>
 
 <script>
+    document.getElementById('desktopView').onclick=()=>{
+        document.getElementById('mainContainer').style.setProperty('--max-width','1400px');
+        document.getElementById('desktopView').classList.add('active');
+        document.getElementById('mobileView').classList.remove('active');
+    };
+    document.getElementById('mobileView').onclick=()=>{
+        document.getElementById('mainContainer').style.setProperty('--max-width','100%');
+        document.getElementById('mobileView').classList.add('active');
+        document.getElementById('desktopView').classList.remove('active');
+    };
+    document.getElementById('desktopView').classList.add('active');
+    
     let currentExamId = null;
     let currentExamConfig = null;
     let currentQuestions = [];
@@ -486,27 +532,60 @@ MAIN_APP_PAGE = '''
     let pendingStudents = [];
     
     function loadExams() {
-        fetch('/api/exams').then(r=>r.json()).then(data=>{renderExamsList(data);renderOldExamsList(data);});
+        fetch('/api/exams').then(r=>r.json()).then(data=>{
+            renderExamsList(data);
+            renderOldExamsList(data);
+        });
     }
+    
     function renderExamsList(exams) {
         const container = document.getElementById('exams-list');
-        if(Object.keys(exams).length===0){container.innerHTML='<div style="text-align:center;padding:40px">لا توجد اختبارات حالية</div>';return;}
+        if(Object.keys(exams).length===0){
+            container.innerHTML='<div style="text-align:center;padding:40px">لا توجد اختبارات حالية</div>';
+            return;
+        }
         let html='';
         for(let id in exams){
             const exam=exams[id];
             const completedCount=exam.results?exam.results.filter(r=>r.finalPercent!==null).length:0;
             const totalStudents=exam.students?exam.students.length:0;
-            html+=`<div class="exam-card"><div class="exam-title">${exam.name}</div><div class="exam-info"><span>نوع: ${exam.type==='part'?'جزء '+exam.part:'القرآن كامل'}</span><span>الطلاب: ${completedCount}/${totalStudents}</span><span>تاريخ: ${exam.date}</span></div><div class="exam-actions"><button class="btn-primary btn-sm" onclick="startExam('${id}')">بدء الاختبار</button><button class="btn-secondary btn-sm" onclick="editExam('${id}')">تعديل</button><button class="btn-danger btn-sm" onclick="deleteExam('${id}')">حذف</button><button class="btn-outline btn-sm" onclick="viewExamResults('${id}')">عرض النتائج</button></div></div>`;
+            html+=`<div class="exam-card">
+                <div class="exam-title">${exam.name}</div>
+                <div class="exam-info">
+                    <span>نوع: ${exam.type==='part'?'جزء '+exam.part:'القرآن كامل'}</span>
+                    <span>الطلاب: ${completedCount}/${totalStudents}</span>
+                    <span>تاريخ: ${exam.date}</span>
+                </div>
+                <div class="exam-actions">
+                    <button class="btn-primary btn-sm" onclick="startExam('${id}')">بدء الاختبار</button>
+                    <button class="btn-secondary btn-sm" onclick="editExam('${id}')">تعديل</button>
+                    <button class="btn-danger btn-sm" onclick="deleteExam('${id}')">حذف</button>
+                    <button class="btn-outline btn-sm" onclick="viewExamResults('${id}')">عرض النتائج</button>
+                </div>
+            </div>`;
         }
         container.innerHTML=html;
     }
+    
     function renderOldExamsList(exams){
         const container=document.getElementById('old-exams-list');
-        if(Object.keys(exams).length===0){container.innerHTML='<div style="text-align:center;padding:40px">لا توجد اختبارات سابقة</div>';return;}
+        if(Object.keys(exams).length===0){
+            container.innerHTML='<div style="text-align:center;padding:40px">لا توجد اختبارات سابقة</div>';
+            return;
+        }
         let html='';
         for(let id in exams){
             const exam=exams[id];
-            html+=`<div class="exam-card"><div class="exam-title">${exam.name}</div><div class="exam-info"><span>نوع: ${exam.type==='part'?'جزء '+exam.part:'القرآن كامل'}</span><span>التاريخ: ${exam.date}</span></div><div class="exam-actions"><button class="btn-outline btn-sm" onclick="viewExamResults('${id}')">عرض النتائج</button></div></div>`;
+            html+=`<div class="exam-card">
+                <div class="exam-title">${exam.name}</div>
+                <div class="exam-info">
+                    <span>نوع: ${exam.type==='part'?'جزء '+exam.part:'القرآن كامل'}</span>
+                    <span>التاريخ: ${exam.date}</span>
+                </div>
+                <div class="exam-actions">
+                    <button class="btn-outline btn-sm" onclick="viewExamResults('${id}')">عرض النتائج</button>
+                </div>
+            </div>`;
         }
         container.innerHTML=html;
     }
@@ -514,37 +593,103 @@ MAIN_APP_PAGE = '''
     window.editExam=function(examId){
         fetch(`/api/exam/${examId}`).then(r=>r.json()).then(exam=>{
             document.getElementById('edit-content').innerHTML=`
-                <label>اسم الاختبار</label><input type="text" id="edit-exam-name" value="${exam.name}">
-                <label>نوع الاختبار</label><select id="edit-exam-type"><option value="part" ${exam.type==='part'?'selected':''}>جزء محدد</option><option value="full" ${exam.type==='full'?'selected':''}>القرآن كامل</option></select>
-                <div id="edit-part-container" style="${exam.type==='part'?'':'display:none'}"><label>الجزء</label><select id="edit-part-select">${[...Array(30)].map((_,i)=>`<option value="${i+1}" ${exam.part==i+1?'selected':''}>الجزء ${i+1}</option>`).join('')}</select></div>
-                <label>عدد الأسئلة</label><input type="number" id="edit-num-questions" value="${exam.numQuestions}">
-                <label>نسبة الخطأ الواحد</label><input type="number" id="edit-error-deduction" value="${exam.errorDeduction}" step="0.5">
-                <label>الطلاب</label><div id="edit-students-list"></div>
-                <div class="flex-row"><input type="text" id="edit-new-student" placeholder="اسم طالب جديد" style="flex:2"><button class="btn-secondary btn-sm" onclick="addEditStudent()">+ إضافة</button></div>
+                <label>اسم الاختبار</label>
+                <input type="text" id="edit-exam-name" value="${exam.name}">
+                <label>نوع الاختبار</label>
+                <select id="edit-exam-type">
+                    <option value="part" ${exam.type==='part'?'selected':''}>جزء محدد</option>
+                    <option value="full" ${exam.type==='full'?'selected':''}>القرآن كامل</option>
+                </select>
+                <div id="edit-part-container" style="${exam.type==='part'?'':'display:none'}">
+                    <label>الجزء</label>
+                    <select id="edit-part-select">${[...Array(30)].map((_,i)=>`<option value="${i+1}" ${exam.part==i+1?'selected':''}>الجزء ${i+1}</option>`).join('')}</select>
+                </div>
+                <label>عدد الأسئلة</label>
+                <input type="number" id="edit-num-questions" value="${exam.numQuestions}">
+                <label>نسبة الخطأ الواحد</label>
+                <input type="number" id="edit-error-deduction" value="${exam.errorDeduction}" step="0.5">
+                <label>الطلاب</label>
+                <div id="edit-students-list"></div>
+                <div class="flex-row">
+                    <input type="text" id="edit-new-student" placeholder="اسم طالب جديد" style="flex:2">
+                    <button class="btn-secondary btn-sm" onclick="addEditStudent()">+ إضافة</button>
+                </div>
             `;
             const studentsContainer=document.getElementById('edit-students-list');
-            exam.students.forEach((s,idx)=>{const div=document.createElement('div');div.className='student-item';div.innerHTML=`<span>${s}</span><button class="btn-danger btn-sm" onclick="this.parentElement.remove(); removeEditStudent(${idx})">حذف</button>`;studentsContainer.appendChild(div);});
+            exam.students.forEach((s,idx)=>{
+                const div=document.createElement('div');
+                div.className='student-item';
+                div.innerHTML=`<span>${s}</span><button class="btn-danger btn-sm" onclick="this.parentElement.remove(); removeEditStudent(${idx})">حذف</button>`;
+                studentsContainer.appendChild(div);
+            });
             window.editExamData={students:[...exam.students],examId:examId};
-            window.addEditStudent=function(){const name=document.getElementById('edit-new-student').value.trim();if(name){const div=document.createElement('div');div.className='student-item';div.innerHTML=`<span>${name}</span><button class="btn-danger btn-sm" onclick="this.parentElement.remove()">حذف</button>`;studentsContainer.appendChild(div);window.editExamData.students.push(name);document.getElementById('edit-new-student').value='';}};
-            window.removeEditStudent=function(idx){window.editExamData.students.splice(idx,1);};
-            document.getElementById('edit-exam-type').onchange=function(){document.getElementById('edit-part-container').style.display=this.value==='part'?'block':'none';};
+            window.addEditStudent=function(){
+                const name=document.getElementById('edit-new-student').value.trim();
+                if(name){
+                    const div=document.createElement('div');
+                    div.className='student-item';
+                    div.innerHTML=`<span>${name}</span><button class="btn-danger btn-sm" onclick="this.parentElement.remove()">حذف</button>`;
+                    studentsContainer.appendChild(div);
+                    window.editExamData.students.push(name);
+                    document.getElementById('edit-new-student').value='';
+                }
+            };
+            window.removeEditStudent=function(idx){
+                window.editExamData.students.splice(idx,1);
+            };
+            document.getElementById('edit-exam-type').onchange=function(){
+                document.getElementById('edit-part-container').style.display=this.value==='part'?'block':'none';
+            };
             document.getElementById('edit-modal').style.display='flex';
             document.getElementById('save-edit-btn').onclick=()=>{
-                const updatedExam={name:document.getElementById('edit-exam-name').value,type:document.getElementById('edit-exam-type').value,part:document.getElementById('edit-part-select')?.value,numQuestions:parseInt(document.getElementById('edit-num-questions').value),errorDeduction:parseFloat(document.getElementById('edit-error-deduction').value),students:window.editExamData.students};
-                fetch(`/api/exam/${examId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updatedExam)}).then(()=>{document.getElementById('edit-modal').style.display='none';loadExams();});
+                const updatedExam={
+                    name:document.getElementById('edit-exam-name').value,
+                    type:document.getElementById('edit-exam-type').value,
+                    part:document.getElementById('edit-part-select')?.value,
+                    numQuestions:parseInt(document.getElementById('edit-num-questions').value),
+                    errorDeduction:parseFloat(document.getElementById('edit-error-deduction').value),
+                    students:window.editExamData.students
+                };
+                fetch(`/api/exam/${examId}`,{
+                    method:'PUT',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify(updatedExam)
+                }).then(()=>{
+                    document.getElementById('edit-modal').style.display='none';
+                    loadExams();
+                });
             };
         });
     };
     
-    window.deleteExam=function(examId){if(confirm('هل أنت متأكد من حذف هذا الاختبار؟')){fetch(`/api/exam/${examId}`,{method:'DELETE'}).then(()=>loadExams());}};
+    window.deleteExam=function(examId){
+        if(confirm('هل أنت متأكد من حذف هذا الاختبار؟')){
+            fetch(`/api/exam/${examId}`,{method:'DELETE'}).then(()=>loadExams());
+        }
+    };
     
     window.viewExamResults=function(examId){
         fetch(`/api/exam/${examId}`).then(r=>r.json()).then(exam=>{
-            if(!exam.results||exam.results.length===0){alert('لا توجد نتائج لهذا الاختبار');return;}
+            if(!exam.results||exam.results.length===0){
+                alert('لا توجد نتائج لهذا الاختبار');
+                return;
+            }
             const sorted=[...exam.results].sort((a,b)=>b.finalPercent-a.finalPercent);
-            let html=`<h2>نتائج ${exam.name}</h2><table class="leaderboard-table"><thead><tr><th>#</th><th>الاسم</th><th>النسبة</th><th>الأخطاء</th></tr></thead><tbody>`;
-            sorted.forEach((r,idx)=>{html+=`<tr><td>${idx+1}</td><td>${r.name}</td><td><strong>${r.finalPercent.toFixed(1)}%</strong></td><td>${r.totalErrors}</td></tr>`;});
-            html+=`</tbody></table><button id="close-results" class="btn-primary" style="margin-top:20px">إغلاق</button>`;
+            let html=`<h2>نتائج ${exam.name}</h2>
+                <table class="leaderboard-table"><thead><tr><th>#</th><th>الاسم</th><th>النسبة</th><th>الأخطاء</th></tr></thead><tbody>`;
+            sorted.forEach((r,idx)=>{
+                let rankClass='';
+                if(idx===0) rankClass='rank-1';
+                else if(idx===1) rankClass='rank-2';
+                else if(idx===2) rankClass='rank-3';
+                html+=`<tr class="${rankClass}">
+                    <td>${idx+1}</td>
+                    <td>${r.name}</td>
+                    <td><strong>${r.finalPercent.toFixed(1)}%</strong></td>
+                    <td>${r.totalErrors}</td>
+                </tr>`;
+            });
+            html+=`</tbody>赶</table><button id="close-results" class="btn-primary" style="margin-top:20px">إغلاق</button>`;
             document.getElementById('results-content').innerHTML=html;
             document.getElementById('results-modal').style.display='flex';
             document.getElementById('close-results').onclick=()=>document.getElementById('results-modal').style.display='none';
@@ -557,12 +702,52 @@ MAIN_APP_PAGE = '''
     function renderStudentsList(){
         const container=document.getElementById('students-container');
         container.innerHTML='';
-        studentsList.forEach((student,idx)=>{const div=document.createElement('div');div.className='student-item';div.innerHTML=`<span>${student}</span><button class="btn-danger btn-sm" onclick="removeStudent(${idx})">حذف</button>`;container.appendChild(div);});
+        studentsList.forEach((student,idx)=>{
+            const div=document.createElement('div');
+            div.className='student-item';
+            div.innerHTML=`<span>${student}</span><button class="btn-danger btn-sm" onclick="removeStudent(${idx})">حذف</button>`;
+            container.appendChild(div);
+        });
     }
-    window.removeStudent=function(idx){studentsList.splice(idx,1);renderStudentsList();};
-    document.getElementById('add-student-btn').onclick=()=>{const name=document.getElementById('new-student-name').value.trim();if(name){studentsList.push(name);renderStudentsList();document.getElementById('new-student-name').value='';}else{alert('أدخل اسم الطالب');}};
-    document.getElementById('add-criteria-btn').onclick=()=>{const container=document.getElementById('criteria-container');const idx=criteriaList.length;criteriaList.push({name:''});const div=document.createElement('div');div.className='criteria-item';div.innerHTML=`<div class="flex-row"><input type="text" placeholder="اسم المعيار" style="flex:2" data-criteria-name="${idx}"><button class="btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); criteriaList.splice(${idx},1)">حذف</button></div>`;container.appendChild(div);div.querySelector('[data-criteria-name]').onchange=(e)=>criteriaList[idx].name=e.target.value;};
-    document.getElementById('exam-type').onchange=()=>{const type=document.getElementById('exam-type').value;document.getElementById('part-select-container').style.display=type==='part'?'block':'none';};document.getElementById('exam-type').onchange();
+    
+    window.removeStudent=function(idx){
+        studentsList.splice(idx,1);
+        renderStudentsList();
+    };
+    
+    document.getElementById('add-student-btn').onclick=()=>{
+        const name=document.getElementById('new-student-name').value.trim();
+        if(name){
+            studentsList.push(name);
+            renderStudentsList();
+            document.getElementById('new-student-name').value='';
+        }else{
+            alert('أدخل اسم الطالب');
+        }
+    };
+    
+    document.getElementById('add-criteria-btn').onclick=()=>{
+        const container=document.getElementById('criteria-container');
+        const idx=criteriaList.length;
+        criteriaList.push({name:''});
+        const div=document.createElement('div');
+        div.className='criteria-item';
+        div.innerHTML=`
+            <div class="flex-row">
+                <input type="text" placeholder="اسم المعيار" style="flex:2" data-criteria-name="${idx}">
+                <button class="btn-danger btn-sm" onclick="this.parentElement.parentElement.remove(); criteriaList.splice(${idx},1)">حذف</button>
+            </div>
+        `;
+        container.appendChild(div);
+        div.querySelector('[data-criteria-name]').onchange=(e)=>criteriaList[idx].name=e.target.value;
+    };
+    
+    document.getElementById('exam-type').onchange=()=>{
+        const type=document.getElementById('exam-type').value;
+        document.getElementById('part-select-container').style.display=type==='part'?'block':'none';
+    };
+    document.getElementById('exam-type').onchange();
+    
     document.getElementById('create-exam-btn').onclick=()=>{
         const examName=document.getElementById('exam-name').value||'اختبار جديد';
         const examType=document.getElementById('exam-type').value;
@@ -570,9 +755,34 @@ MAIN_APP_PAGE = '''
         const numQuestions=parseInt(document.getElementById('num-questions').value);
         if(studentsList.length===0){alert('أضف طالباً واحداً على الأقل');return;}
         const criteria=criteriaList.filter(c=>c.name);
-        let examData={name:examName,type:examType,errorDeduction:errorDeduction,numQuestions:numQuestions,students:studentsList,criteria:criteria};
-        if(examType==='part'){const partNum=parseInt(document.getElementById('part-select').value);if(!partNum){alert('اختر الجزء');return;}examData.part=partNum;}
-        fetch('/api/exams',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(examData)}).then(()=>{studentsList=[];criteriaList=[];renderStudentsList();document.getElementById('criteria-container').innerHTML='';document.getElementById('exam-name').value='';document.getElementById('num-questions').value='10';document.getElementById('error-deduction').value='2';loadExams();document.querySelector('.tab[data-tab="exams"]').click();});
+        let examData={
+            name:examName,
+            type:examType,
+            errorDeduction:errorDeduction,
+            numQuestions:numQuestions,
+            students:studentsList,
+            criteria:criteria
+        };
+        if(examType==='part'){
+            const partNum=parseInt(document.getElementById('part-select').value);
+            if(!partNum){alert('اختر الجزء');return;}
+            examData.part=partNum;
+        }
+        fetch('/api/exams',{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(examData)
+        }).then(()=>{
+            studentsList=[];
+            criteriaList=[];
+            renderStudentsList();
+            document.getElementById('criteria-container').innerHTML='';
+            document.getElementById('exam-name').value='';
+            document.getElementById('num-questions').value='10';
+            document.getElementById('error-deduction').value='2';
+            loadExams();
+            document.querySelector('.tab[data-tab="exams"]').click();
+        });
     };
     
     window.startExam=function(examId){
@@ -584,9 +794,14 @@ MAIN_APP_PAGE = '''
                 currentQuestions=questions;
                 const completedNames=(exam.results||[]).map(r=>r.name);
                 pendingStudents=exam.students.filter(s=>!completedNames.includes(s));
-                if(pendingStudents.length===0){alert('جميع الطلاب قد اختبروا بالفعل');return;}
+                if(pendingStudents.length===0){
+                    alert('جميع الطلاب قد اختبروا بالفعل');
+                    return;
+                }
                 let html=`<h2>اختر الطالب</h2><div style="text-align:center; margin:20px 0">`;
-                for(let student of pendingStudents){html+=`<div style="display:inline-block; margin:8px; padding:12px 25px; background:#fff; border:1px solid #2b6e3c; border-radius:60px; cursor:pointer" onclick="selectStudent('${student}')">${student}</div>`;}
+                for(let student of pendingStudents){
+                    html+=`<div style="display:inline-block; margin:8px; padding:12px 25px; background:#fff; border:1px solid #2b6e3c; border-radius:60px; cursor:pointer" onclick="selectStudent('${student}')">${student}</div>`;
+                }
                 html+=`</div><button id="close-student-select" class="btn-secondary" style="width:100%">إلغاء</button>`;
                 document.getElementById('student-select-content').innerHTML=html;
                 document.getElementById('student-select-modal').style.display='flex';
@@ -601,18 +816,55 @@ MAIN_APP_PAGE = '''
         currentQuestionIndex=0;
         studentErrors=new Array(currentQuestions.length).fill(0);
         currentCriteriaScores={};
-        for(let c of currentExamConfig.criteria||[]){currentCriteriaScores[c.name]=100;}
+        for(let c of currentExamConfig.criteria||[]){
+            currentCriteriaScores[c.name]=100;
+        }
         renderQuizQuestion();
     };
     
     function renderQuizQuestion(){
         const q=currentQuestions[currentQuestionIndex];
-        let html=`<h2>اختبار: ${currentExamConfig.name}</h2><div style="background:#e9e0c8; padding:15px; border-radius:60px; margin-bottom:20px"><span>الطالب: <strong>${currentStudent}</strong></span><span style="float:left">الأخطاء: <strong id="total-errors">${studentErrors.reduce((a,b)=>a+b,0)}</strong></span></div><div class="quiz-question"><div class="page-badge">الصفحة ${q.page}</div><div style="font-size:1.5rem; margin:20px 0">سورة ${q.surah}<br>الآية ${q.verse}</div></div><div class="flex-row"><label>عدد الأخطاء في هذا السؤال:</label><input type="number" id="question-errors" class="error-input" value="${studentErrors[currentQuestionIndex]}" min="0" max="10"></div><div class="flex-row" style="justify-content:space-between; margin-top:20px"><button id="prev-question" class="btn-secondary">السابق</button><span>السؤال ${currentQuestionIndex+1} من ${currentQuestions.length}</span><button id="next-question" class="btn-primary">التالي</button></div><button id="finish-student" class="btn-primary" style="width:100%; margin-top:20px">إنهاء اختبار هذا الطالب</button>`;
+        let html=`
+            <h2>اختبار: ${currentExamConfig.name}</h2>
+            <div style="background:#e9e0c8; padding:15px; border-radius:60px; margin-bottom:20px">
+                <span>الطالب: <strong>${currentStudent}</strong></span>
+                <span style="float:left">الأخطاء: <strong id="total-errors">${studentErrors.reduce((a,b)=>a+b,0)}</strong></span>
+            </div>
+            <div class="quiz-question">
+                <div class="page-badge">الصفحة ${q.page}</div>
+                <div style="font-size:1.5rem; margin:20px 0">سورة ${q.surah}<br>الآية ${q.verse}</div>
+            </div>
+            <div class="flex-row">
+                <label>عدد الأخطاء في هذا السؤال:</label>
+                <input type="number" id="question-errors" class="error-input" value="${studentErrors[currentQuestionIndex]}" min="0" max="10">
+            </div>
+            <div class="flex-row" style="justify-content:space-between; margin-top:20px">
+                <button id="prev-question" class="btn-secondary">السابق</button>
+                <span>السؤال ${currentQuestionIndex+1} من ${currentQuestions.length}</span>
+                <button id="next-question" class="btn-primary">التالي</button>
+            </div>
+            <button id="finish-student" class="btn-primary" style="width:100%; margin-top:20px">إنهاء اختبار هذا الطالب</button>
+        `;
         document.getElementById('quiz-content').innerHTML=html;
-        document.getElementById('question-errors').onchange=()=>{studentErrors[currentQuestionIndex]=parseInt(document.getElementById('question-errors').value)||0;document.getElementById('total-errors').innerText=studentErrors.reduce((a,b)=>a+b,0);};
-        document.getElementById('prev-question').onclick=()=>{if(currentQuestionIndex>0){currentQuestionIndex--;renderQuizQuestion();}};
-        document.getElementById('next-question').onclick=()=>{if(currentQuestionIndex+1<currentQuestions.length){currentQuestionIndex++;renderQuizQuestion();}};
-        document.getElementById('finish-student').onclick=()=>{showCriteriaInput();};
+        document.getElementById('question-errors').onchange=()=>{
+            studentErrors[currentQuestionIndex]=parseInt(document.getElementById('question-errors').value)||0;
+            document.getElementById('total-errors').innerText=studentErrors.reduce((a,b)=>a+b,0);
+        };
+        document.getElementById('prev-question').onclick=()=>{
+            if(currentQuestionIndex>0){
+                currentQuestionIndex--;
+                renderQuizQuestion();
+            }
+        };
+        document.getElementById('next-question').onclick=()=>{
+            if(currentQuestionIndex+1<currentQuestions.length){
+                currentQuestionIndex++;
+                renderQuizQuestion();
+            }
+        };
+        document.getElementById('finish-student').onclick=()=>{
+            showCriteriaInput();
+        };
         document.getElementById('quiz-modal').style.display='flex';
     }
     
@@ -620,22 +872,61 @@ MAIN_APP_PAGE = '''
         const totalErrors=studentErrors.reduce((a,b)=>a+b,0);
         const errorPercent=totalErrors*currentExamConfig.errorDeduction;
         const baseScore=Math.max(0,100-errorPercent);
-        let html=`<h2>نتيجة ${currentStudent}</h2><div style="background:#eef3e9; border-radius:35px; padding:20px; margin:15px 0"><p>إجمالي الأخطاء: ${totalErrors}</p><p>نسبة الأخطاء: ${errorPercent}% (ينقص كل خطأ ${currentExamConfig.errorDeduction}%)</p><p>الدرجة الأساسية: ${baseScore.toFixed(1)}%</p></div><div style="background:#fff5e0; border-radius:35px; padding:20px; margin:15px 0"><h3>المعايير الإضافية</h3>`;
-        for(let c of currentExamConfig.criteria||[]){html+=`<div class="flex-row" style="margin:10px 0"><span style="width:150px">${c.name}:</span><input type="number" id="criteria-${c.name}" class="error-input" value="${currentCriteriaScores[c.name]}" min="0" max="100" step="0.5"><span>%</span></div>`;}
-        html+=`</div><button id="save-criteria" class="btn-primary" style="width:100%">حفظ وحساب النسبة النهائية</button>`;
+        let html=`
+            <h2>نتيجة ${currentStudent}</h2>
+            <div style="background:#eef3e9; border-radius:35px; padding:20px; margin:15px 0">
+                <p>إجمالي الأخطاء: ${totalErrors}</p>
+                <p>نسبة الأخطاء: ${errorPercent}% (ينقص كل خطأ ${currentExamConfig.errorDeduction}%)</p>
+                <p>الدرجة الأساسية: ${baseScore.toFixed(1)}%</p>
+            </div>
+            <div style="background:#fff5e0; border-radius:35px; padding:20px; margin:15px 0">
+                <h3>المعايير الإضافية</h3>
+        `;
+        for(let c of currentExamConfig.criteria||[]){
+            html+=`
+                <div class="flex-row" style="margin:10px 0">
+                    <span style="width:150px">${c.name}:</span>
+                    <input type="number" id="criteria-${c.name}" class="error-input" value="${currentCriteriaScores[c.name]}" min="0" max="100" step="0.5">
+                    <span>%</span>
+                </div>
+            `;
+        }
+        html+=`
+            </div>
+            <button id="save-criteria" class="btn-primary" style="width:100%">حفظ وحساب النسبة النهائية</button>
+        `;
         document.getElementById('quiz-content').innerHTML=html;
-        for(let c of currentExamConfig.criteria||[]){document.getElementById(`criteria-${c.name}`).onchange=(e)=>{currentCriteriaScores[c.name]=parseFloat(e.target.value)||0;};}
+        for(let c of currentExamConfig.criteria||[]){
+            document.getElementById(`criteria-${c.name}`).onchange=(e)=>{
+                currentCriteriaScores[c.name]=parseFloat(e.target.value)||0;
+            };
+        }
         document.getElementById('save-criteria').onclick=()=>{
             let criteriaSum=0;
-            for(let c of currentExamConfig.criteria||[]){criteriaSum+=currentCriteriaScores[c.name];}
+            for(let c of currentExamConfig.criteria||[]){
+                criteriaSum+=currentCriteriaScores[c.name];
+            }
             const criteriaAvg=currentExamConfig.criteria.length?criteriaSum/currentExamConfig.criteria.length:100;
             const finalPercent=(baseScore+criteriaAvg)/2;
-            fetch(`/api/exam/${currentExamId}/result`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:currentStudent,totalErrors:totalErrors,finalPercent:finalPercent,date:new Date().toLocaleDateString('ar-EG')})}).then(()=>{
+            fetch(`/api/exam/${currentExamId}/result`,{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    name:currentStudent,
+                    totalErrors:totalErrors,
+                    finalPercent:finalPercent,
+                    date:new Date().toLocaleDateString('ar-EG')
+                })
+            }).then(()=>{
                 document.getElementById('quiz-modal').style.display='none';
                 fetch(`/api/exam/${currentExamId}`).then(r=>r.json()).then(exam=>{
                     const completedCount=(exam.results||[]).length;
-                    if(completedCount===exam.students.length){showFinalRanking(exam);}
-                    else{alert(`تم حفظ نتيجة ${currentStudent}`);startExam(currentExamId);}
+                    if(completedCount===exam.students.length){
+                        showFinalRanking(exam);
+                    }else{
+                        alert(`تم حفظ نتيجة ${currentStudent}`);
+                        startExam(currentExamId);
+                    }
                 });
             });
         };
@@ -643,16 +934,45 @@ MAIN_APP_PAGE = '''
     
     function showFinalRanking(exam){
         const sorted=[...exam.results].sort((a,b)=>b.finalPercent-a.finalPercent);
-        let html=`<h2>الترتيب النهائي - ${exam.name}</h2><table class="leaderboard-table"><thead><tr><th>#</th><th>الاسم</th><th>النسبة</th><th>الأخطاء</th></tr></thead><tbody>`;
-        sorted.forEach((r,idx)=>{let rankClass='';if(idx===0)rankClass='rank-1';else if(idx===1)rankClass='rank-2';else if(idx===2)rankClass='rank-3';html+=`<tr class="${rankClass}"><td>${idx+1}</td><td>${r.name}</td><td><strong>${r.finalPercent.toFixed(1)}%</strong></td><td>${r.totalErrors}</td></tr>`;});
+        let html=`
+            <h2>الترتيب النهائي - ${exam.name}</h2>
+            <table class="leaderboard-table"><thead><tr><th>#</th><th>الاسم</th><th>النسبة</th><th>الأخطاء</th></tr></thead><tbody>
+        `;
+        sorted.forEach((r,idx)=>{
+            let rankClass='';
+            if(idx===0)rankClass='rank-1';
+            else if(idx===1)rankClass='rank-2';
+            else if(idx===2)rankClass='rank-3';
+            html+=`<tr class="${rankClass}">
+                <td>${idx+1}</td>
+                <td>${r.name}</td>
+                <td><strong>${r.finalPercent.toFixed(1)}%</strong></td>
+                <td>${r.totalErrors}</td>
+            </tr>`;
+        });
         html+=`</tbody></table><button id="close-final" class="btn-primary" style="margin-top:20px">إغلاق</button>`;
         document.getElementById('results-content').innerHTML=html;
         document.getElementById('results-modal').style.display='flex';
-        document.getElementById('close-final').onclick=()=>{document.getElementById('results-modal').style.display='none';loadExams();};
+        document.getElementById('close-final').onclick=()=>{
+            document.getElementById('results-modal').style.display='none';
+            loadExams();
+        };
     }
     
-    document.querySelectorAll('.tab').forEach(tab=>{tab.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));tab.classList.add('active');document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');if(tab.dataset.tab==='exams')loadExams();};});
-    document.getElementById('close-edit-btn').onclick=()=>{document.getElementById('edit-modal').style.display='none';};
+    document.querySelectorAll('.tab').forEach(tab=>{
+        tab.onclick=()=>{
+            document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+            if(tab.dataset.tab==='exams') loadExams();
+        };
+    });
+    
+    document.getElementById('close-edit-btn').onclick=()=>{
+        document.getElementById('edit-modal').style.display='none';
+    };
+    
     loadExams();
 </script>
 </body>
@@ -660,7 +980,7 @@ MAIN_APP_PAGE = '''
 '''
 
 # ============================================
-# API Routes
+# Routes
 # ============================================
 @app.route('/login')
 def login():
@@ -769,13 +1089,11 @@ def api_full_questions():
     return jsonify(generate_full_questions(num))
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     print("\n" + "="*60)
     print("نور البيان - نظام الاختبارات القرآنية")
     print("="*60)
-    print("\nافتح الرابط في المتصفح:")
-    print("   http://127.0.0.1:5000/login")
-    print("\nحسابات مسبقة:")
-    print("   admin / 123456")
-    print("   teacher / quran2024")
+    print(f"\nافتح الرابط في المتصفح: http://127.0.0.1:{port}/login")
+    print("\nحسابات مسبقة: admin / 123456")
     print("="*60)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=port)
