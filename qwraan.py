@@ -270,7 +270,81 @@ def generate_full_questions(num_questions=30):
     return random.sample(all_verses, num_questions)
 
 # ============================================
-# صفحات HTML (منفصلة وواضحة)
+# الصفحة الرئيسية (Landing Page) - الإضافة الجديدة
+# ============================================
+
+LANDING_PAGE = '''
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نور البيان - نظام الاختبارات القرآنية</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','Amiri',sans-serif}
+        body{background:linear-gradient(135deg,#0a3b2a,#146b4e);min-height:100vh}
+        .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px 20px}
+        .hero-content{background:#fffef7;border-radius:80px;padding:50px 40px;max-width:800px;width:100%;box-shadow:0 25px 50px rgba(0,0,0,0.3)}
+        h1{color:#2b6e3c;font-size:3rem;margin-bottom:10px}
+        .subtitle{color:#c97e2a;font-size:1.3rem;border-bottom:2px solid #d4af37;display:inline-block;padding-bottom:5px;margin-bottom:30px}
+        .description{color:#333;font-size:1.1rem;line-height:1.8;margin:30px 0;text-align:justify}
+        .features{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;margin:40px 0}
+        .feature{background:#f0e8d0;border-radius:30px;padding:20px;width:200px;text-align:center}
+        .feature-icon{font-size:2.5rem;margin-bottom:10px}
+        .feature-title{color:#2b6e3c;font-weight:bold;margin-bottom:5px}
+        .btn-start{background:#2b6e3c;color:#fff;border:none;padding:18px 50px;font-size:1.3rem;font-weight:bold;border-radius:60px;cursor:pointer;margin-top:20px;transition:transform 0.2s;box-shadow:0 5px 0 #1c4a28}
+        .btn-start:hover{transform:translateY(-2px)}
+        .btn-start:active{transform:translateY(2px)}
+        .footer{margin-top:40px;color:#666;font-size:0.8rem}
+        @media (max-width:768px){
+            .hero-content{padding:30px 20px}
+            h1{font-size:2rem}
+            .feature{width:150px;padding:15px}
+        }
+    </style>
+</head>
+<body>
+<div class="hero">
+    <div class="hero-content">
+        <h1>نور البيان</h1>
+        <div class="subtitle">جمعية تحفيظ القرآن الكريم - الروضة هباس</div>
+        <div class="description">
+            نظام متخصص لاختبارات حفظ القرآن الكريم<br>
+            يتيح للمعلمين إنشاء اختبارات لأجزاء محددة أو القرآن كامل،<br>
+            مع إمكانية تتبع نتائج الطلاب وعمل لوحة متصدرين.
+        </div>
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">📖</div>
+                <div class="feature-title">اختبارات مرنة</div>
+                <div>أجزاء محددة أو القرآن كامل</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📊</div>
+                <div class="feature-title">تتبع النتائج</div>
+                <div>لوحة متصدرين وتحليلات</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">👨‍🏫</div>
+                <div class="feature-title">إدارة الطلاب</div>
+                <div>إضافة وتقييم الطلاب</div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">معايير متعددة</div>
+                <div>تلاوة، تجويد، ترتيل</div>
+            </div>
+        </div>
+        <button class="btn-start" onclick="location.href='/login'">ابدأ الاختبارات</button>
+        <div class="footer">نظام نور البيان | جميع الحقوق محفوظة</div>
+    </div>
+</div>
+</body>
+</html>
+'''
+
+# ============================================
+# صفحات HTML
 # ============================================
 
 LOGIN_PAGE = '''
@@ -687,9 +761,9 @@ MAIN_APP_PAGE = '''
                     <td>${r.name}</td>
                     <td><strong>${r.finalPercent.toFixed(1)}%</strong></td>
                     <td>${r.totalErrors}</td>
-                </tr>`;
+                <tr>`;
             });
-            html+=`</tbody>赶</table><button id="close-results" class="btn-primary" style="margin-top:20px">إغلاق</button>`;
+            html+=`</tbody>赶<table><button id="close-results" class="btn-primary" style="margin-top:20px">إغلاق</button>`;
             document.getElementById('results-content').innerHTML=html;
             document.getElementById('results-modal').style.display='flex';
             document.getElementById('close-results').onclick=()=>document.getElementById('results-modal').style.display='none';
@@ -982,6 +1056,12 @@ MAIN_APP_PAGE = '''
 # ============================================
 # Routes
 # ============================================
+
+@app.route('/')
+def landing():
+    """الصفحة الرئيسية للترحيب"""
+    return render_template_string(LANDING_PAGE)
+
 @app.route('/login')
 def login():
     return render_template_string(LOGIN_PAGE)
@@ -1024,7 +1104,7 @@ def main_app():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('landing'))
 
 @app.route('/api/exams')
 def api_exams():
@@ -1093,7 +1173,7 @@ if __name__ == '__main__':
     print("\n" + "="*60)
     print("نور البيان - نظام الاختبارات القرآنية")
     print("="*60)
-    print(f"\nافتح الرابط في المتصفح: http://127.0.0.1:{port}/login")
+    print(f"\nافتح الرابط في المتصفح: http://127.0.0.1:{port}/")
     print("\nحسابات مسبقة: admin / 123456")
     print("="*60)
     app.run(debug=False, host='0.0.0.0', port=port)
