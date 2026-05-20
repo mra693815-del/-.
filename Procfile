@@ -1,1 +1,1 @@
-web:python qwrany.py
+web:python qwraan.py
